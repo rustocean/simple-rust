@@ -511,9 +511,11 @@ here x will be 4 . Because `{}` is an expression which is use to create scopes. 
 
 In rust you can define return type using  arrow `->`
 
+```
 function summer(x: i32, y: i32) -> i32 {
 	x + y
 }
+```
 
 remember we didn't semicoloned x + y so that it act as expression. If you semicolned it will implicitly return () and it should throw error because we have said by using arrow we expect return type to be `i32`. It is beauty of types that you can catch such error easily.
 
