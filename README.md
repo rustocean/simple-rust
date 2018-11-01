@@ -391,3 +391,186 @@ $ cargo run
 ```
 
 Congratulation you build your first game :)
+
+# Common Programming Concept
+
+Keywords : Rust has reserved some words which we cannot use for naming variables and functions.
+
+Variables are immutable by default but you want to mutate it use `mut`
+
+For large data mutating may be faster than copying allocated instances . With samller creating new instances and writing in more functional programming is usally benificial.
+
+Immutable variable and constant differes in way that const must have type annotated and can only be constant expression not result of function call etc.
+Example of constant
+
+```
+const MAX_POINT: u32 = 100_000;
+```
+
+As a convention we use full upcase and for integer we use _ to represent comma.
+
+Example of shadowing
+```
+let spaces = "   ",
+let spaces = spaces.len();
+```
+
+Shadowing is benificial because we don't need to create new variable .
+
+### Data Type
+Rust is static type language. It has scalar type and 
+
+Rust has four scalars: Integer, floating-point numbers, booleans, and characters.
+
+Integer type in rust is represened to i8,i16,i32,i64, isize. Unsigned Integer is represented by u8, u16, u32, u64, usize.
+
+isize means if you are on 64 bit computer it is i64. 
+
+Rust use i32 for default and f64 for floating point number.
+
+Floating point number can be used by f32 and f64 . f64 is default
+
+```
+let x = 2.0; // f64
+```
+
+Rust supports mathematical operation like addition +, subtraction  -, product * , quotient /, remainder %
+
+Boolean are simply `true` and `false`
+```
+let tr = true; // Implicit type annotation
+let fa: bool = false; // explicit type annotation
+```
+
+Charecter type is primitive alphabet and represents unicode scalar value. It supports not only ASCII but japanese, emoji etc.
+
+### Compound type
+Rust has two primitive compound type called `tuples` and `arrays`
+
+For defining tuples use paranthesis `()`
+```
+let less_than_seven = (1,2,3,4,5,6,7) // Implicit type annotation
+let num: (i32,f64,i32) = (1, 2.3, 4) // Explicit type annotation
+```
+Destructing tuple is simple just use paranthesis like this
+```
+let num = (1, 2.3, 4);
+let (x,y,z) = num;
+```
+You can also access tuple by dot syntax `.`.
+```
+let num = (1, 2.3, 4);
+println!("{} {}", num.0, num.1);
+```
+
+
+Arrays are collection of multiple values with same type. Tuple can be of different type but arrays are same type and have fix length. Arrays are stored in stack. 
+
+You can access array using big bracket `[]`
+```
+let day = [1,2,3,4,5];
+
+let third = day[2]
+```
+
+Arrays are zero indexed.
+
+#### Rust Functions
+snake case is convention for naming functions. function is defined by using `fn`
+
+Example
+```
+fn summer (x: i32, y: i32) {
+	let sum = x + y;
+	println!("Sum: {}", sum);
+}
+```
+
+So function can take argument and return a value . In Rust you need to declare all type of argument.
+
+Function can return expressions. Expressins are something that gets evaluated to resulting values.
+
+Example of statement
+let x = 1;
+
+In rust you cannot assign statement with variable
+
+so `let y = let x = 1` is invalid 
+
+`1 + 1` is expression so we can assign it to variable
+
+Function that returns expression can be assigned to variable.
+```
+let z = 3;
+let x = {
+	let z = 1;
+	z + 1
+}
+
+here x will be 4 . Because `{}` is an expression which is use to create scopes. Remember we didn't used semicolon at end of scope.
+
+In rust you can define return type using  arrow `->`
+
+function summer(x: i32, y: i32) -> i32 {
+	x + y
+}
+
+remember we didn't semicoloned x + y so that it act as expression. If you semicolned it will implicitly return () and it should throw error because we have said by using arrow we expect return type to be `i32`. It is beauty of types that you can catch such error easily.
+
+In rust you can use `//` to comment. Remember our code should act as documentation so please lets not missue the comment feature. Its for edges cases where we want another developer to understand what we intend :)
+
+### Control flow
+We have `if` `else if` `else` `for` `while` etc for controlling the flow
+
+`if ,else if, else` can be easily explained by example
+
+```
+let x = 3
+
+if x == 1 {
+	println!("Its one");
+} else if x == 2 {
+	println!("Its two");
+} else {
+	println!("its three");
+}
+```
+
+Rust need boolean in condition part of `if` , `else if` statement. Its is not like otherlanguage which coerce to boolean.
+
+
+You can assign variable with if but all condition should return same type and should be expression.
+
+Looping is easy in rust . You can use loop{} , `while` or `for`
+
+```
+let mut number = 10;
+while number != 0 {
+	println!("{}", number);
+	number = number - 1;
+}
+```
+
+Looping with for
+
+```
+let a = [1,2,3,4,5]
+
+for element in a.iter() {
+	println!("{}", element);
+}
+```
+
+For looping coundown prefer for loop because of safety and consiness of for loop
+
+```
+for number in (1..4).rev() {
+	println!("{}", number);
+}
+```
+
+(1..4) means range which is from `1,3` so you should guess `4` is excluded .
+
+```
+// Todo Exercises
+```
