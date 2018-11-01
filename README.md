@@ -506,6 +506,7 @@ let x = {
 	let z = 1;
 	z + 1
 }
+```
 
 here x will be 4 . Because `{}` is an expression which is use to create scopes. Remember we didn't used semicolon at end of scope.
 
