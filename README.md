@@ -572,8 +572,288 @@ for number in (1..4).rev() {
 }
 ```
 
-(1..4) means range which is from `1,3` so you should guess `4` is excluded .
+`(1..4)` means range which is from `1,3` so you should guess `4` is excluded .
 
 ```
 // Todo Exercises
 ```
+
+## Ownership
+Rust don't have garbage collector like that of Java. It has a robust feature called ownership. It is simple to understand but it implications are too much powerful.
+
+Stack is data structure which is last in first out. Think like stack of books, plates which you can take out from last only. You cannot take from middle. So you can add item on last  and pull out from last. So Push and Pull operation are done on stack.
+
+Heap is poooooooool of memmory. So you can fit unknown size input and increase or decrese according to our desire.
+
+### Ownership Rules
+1. Each value in rust has a variable that called its owner
+2. There can only be one owner at a time ! Solo owner
+3. When owner goes out of scope it will be dropped. So owner is _rusted_ (killed) if we go out of scope :P
+
+
+In rust scope start with opening curly brace `{` and end it closing curly brace `}`
+``
+{  // x is not yet defined
+ 	let x = 3 // x is valid from now
+ 	// x is available
+} // scope gone x gone :_
+``
+
+All primitive which we used till  like int, boolean etc are created on stack and when scope is over they are poped off. So now the one type that works on heaps is `String`. So you might have guess `String` is not easy. 
+
+You must understand that string literal and `String` is different. String literal are immutable. And every string is not determined at time of writing code so we need our second string type provided by Rust called `String`.
+
+```
+let mut x = String::from("hello"); // create a string hello
+s.push_str(", world!") // Now our string is hello, world
+```
+
+So we should know by now string literals are found on final executables that we compile. so its immutable.  But imagine you need to create string from user input. Here we cannot use literal and we are forced to use our handy dandy `String`
+
+Now we used heaps and we don't have garbage collector how are we supposed to clean memory?. And sometime while cleaning we may clean twice causing crashes. We need one allocation on heap and one free. Rust is different. It deallocates memory when variable when goes out of scopes it returns back the memory. 
+
+When variable goes out of scopes Rust call drop. So when closing paranthseis is reached drop is called automatically and memory is cleaned up.
+
+Now its time to examine code
+
+```
+let x = 1;
+let y = x;
+```
+
+Here 1 is integer so when let y =x is done copy of x is binded to y.
+
+But you can think `String` made on heap is too large. So copying and binding is inefficient. So what happen if we do like this
+
+```
+let x = String::from("hello world i am large text");
+let y = x;
+```
+
+You know x is large text so when we call let y = x if we again make copy in heap it is expensive and We have already said rust is fast. If we waste memory like this how will it be this fast .
+So what happens is when we create `String` it returns stack of memory which has  pointer where it is residing, length and capaciy. Length means how much memory string is using. Capacity means total amount of memory operating system has given to string.
+
+When we assign let y = x; We copy stack related to x not whole heap .  
+
+Now lets get moving when rust go to out of scope drop function is called to clean up heap memory. And `x` and `y` are on same scope so when they drop do memory get double freed?
+
+Double free is problematic so rust has plan to handle it.
+
+When we assign let y = x; Rust will remove x1 ownership of heap and make y as owner of that heap (by heap mean i mean memory where our large string is living).
+
+And as x is removed the problem of double free never arises.
+
+We can call it we moved x to y when we do
+```
+let x = String........
+let y = x
+```
+
+But what should we do if we want to make a copy? We can use clone
+
+```
+let s1 = String::from("hello");
+let s2 = s1.clone
+```
+Now both s1 and s2 are poiting to different location of heap.
+
+I hope we understood how heap and stack copy works :) Assiging variable means copying stack.
+
+Copying stack doesn't create problem on primitive type like integer because they uses special annotation called Copy trait. If type has copy trait it is reusable after assignment. Rust don't allow to implement copy trait if type has implemented Drop which our `String` has.
+
+
+### Ownership and function
+
+When we pass value to function it is like assining value to a variable. Passing a variable to function will have similar implication of moving or copying.
+
+```
+fn main() { // lets call this scope a
+	let x = String::from("hello"); // x is in scope a
+	takes_ownership(x); // Now x is no longer valid because it is moved to this function 
+	let y = 5;
+	makes_copy(y); // Y will move to its function but is is integer it has copy trait implemented means y will still be 5.
+}
+
+fn take_ownership(some_string: String) { // some_string come in new scope
+	... // do something you love
+} // somestring goes out of scope so is dropped by rust and memory is cleaned up.
+
+function makes_copy(some_integer: i32) { //some_integer comes to scope
+	// do something with this some_integer
+}	// Here some integer goes out of scope and stack is poped of like usual
+```
+
+### Return value and scope
+```
+fn main() {
+	let s1 = gives_onwership; // s1 will be ownership of something. See this function signature.
+
+	let s2 = String::from("hello"); // s2 comes to scope
+	let s3 = takes_and_gives_back(s2); // s2 is moved to parameter. But this function return value which again rebined to s3.
+}// s3 goes out of scope so rust drop it and memory is cleaned. s2 is moved so nothing needs to be done. s1 goes out of scope so is dropped by rust.
+
+fn gives_ownership() -> String {
+	let something = String::from("something");
+
+	something // it is return and it is donated/returned to calling function. Enjoy something caller you are lucky
+}
+
+fn takes_and_gives_back(a_string: String) -> String {
+	a_string
+} // ntohing happens as a_string is returned so is moved to calling function
+```
+
+
+So to get our ownership we need to return back which is too much pain isn't it? So to reduce our pain here comes a hero: References.
+
+We needed to return back ownership just because  we still want to bind that variable to same location on heap. Instead of returning ownership and too much painful job we can easily to references
+
+```
+fn main() {
+	let something = String::from("Something");
+	let len = calculate_length(&something);
+
+	// What happens to something . As we passed something by references something is still owner of that heap. So something is still the string here.
+}
+
+fn calculate_length(s: &String) -> usize { // usize means u32 or u64 os you are using.
+	s.len()
+}
+```
+As we used reference something is not gone away. References allow to refer value without taking ownership of it. And in calculate function at end of scope s don't have any ownership nothing happens.
+
+In rust call having references parameters mean borrowing. We borrow it and when we have done we need to give it back to original thing that gave us.
+
+We can have mutable borrowing but we can have only one mutable borrowing in a scope.
+
+let following causes exception
+
+```
+let mut s = String::from("hello");
+
+let s1 = &mut s;
+let s2 = &mut s;
+```
+It throws error because rust wants to protect us from data race. And data race is too much problematic on real life.
+
+We cannot even have immutable and mutable reference at same time . This is to protect from dangling references.
+so following code throws error
+```
+let s = String::from("hey jude");
+let x = &s; // no problem
+let y = &s; // no problem
+let z = &mut s; // Big problem
+```
+
+It is because let say z was freed. It causes x and y to refernces to memory that was freed. And that is big problem.  You may have got garbage on C and C++ when you reference memory that no longer exist .
+
+
+Slices
+Slides don't have ownership. Slices let you references a sequancial part of collection rather than whole collection. 
+
+So lets program to get slices of string. First we will find index of slice of string where first word end. So basically we are finding index of end of first word.
+
+```
+fn main() {
+	let s = String::from("hello world"); // Our objective is to get index of o.
+	let word = first_word(&s); // we don't want ownership and don't want s to be mutated too.
+}
+
+fn first_word (s: &String) -> usize {
+	let bytes = s.as_bytes();
+
+	for (i, &item) in bytes.iter().enumerate() {
+		if item == b' ' {
+			return i;
+		}
+	}
+}
+```
+So we created a string on heap. Passed it by reference to word.
+
+At first word we are expecting reference of string as parameter and we return integer.
+
+we convert string to bytes so that we can find space. We convert string to bytes by using `as_bytes` method on `String`. It returns array of bytes. We makeit iterable and enumerable which returns tuple of index and reference to value of iterable . Then we compare if item was binary space . If it was we return index.
+
+It is fairly simple right.
+
+But it has a drawback.
+
+Like for this example
+
+```
+fn main() {
+	let mut s = String::from("hello world");
+	let word = first_word(&s);
+
+	s.clear();
+}
+```
+
+here we called s.clear(); but if we investigate value of word it is 5. Because even after clearing s the word doesn't have any impact as it is just unsigned integer. So we will run into trouble if we use that `word` later thinking s is old value.
+
+So this can cause problem unknowinlgy . Rust have a effective solution by using string slices.
+
+String slide is reference to part of string
+
+```
+let s = String::from("hello world");
+let hello = &s[0..5]; //hello
+let world = &s[6..11]; //world
+```
+
+In rust following are equivalent
+```
+let s = String::from("hello");
+let slice = &s[0..2]
+let slide = &s[..2]
+```
+
+following are also equivalent
+```
+let s = String::from("hello");
+let len = s.len();
+
+let slice= &s[3..len];
+let slice = &s[3..];
+```
+
+
+so lets write the first word function that returns a slice instead of index.
+
+```
+fn first_word(s: &String) -> &str {
+	let bytes = s.as_bytes();
+
+	for (i,&item) in bytes.iter().enumerate() {
+		if item == b' ' {
+			return &s[..i];
+		}
+	}
+}
+```
+
+now with this error are hard to occur.
+
+Hmm now we have worked with slices we need to know primitive string are just a string slices. So they are immutable
+
+```
+let x = String::from("hello world");
+let y = x[..]; // it is string slice and there is no mut so it is immutable
+```
+String slices are defined on similar way thats why they are immutable.
+Knowing this has a implication how we pass parameter to function
+
+So we currently have function signature to look like this
+```
+
+```
+Other slice
+There is array slice too
+```
+let a = [1,2,3,4,5];
+let slice = &a[1..3] 
+```
+
+Ok I hope we got meaning of ownership, memory cleanup, heap, stack and slices.
+
