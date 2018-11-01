@@ -846,8 +846,14 @@ Knowing this has a implication how we pass parameter to function
 
 So we currently have function signature to look like this
 ```
-
+fn first_word(s: &String) -> &str {}
 ```
+we can refactor it to
+```
+fn first_word(s: &str) -> &str {}
+```
+
+Now we can pass string literals because they are slices too. And we can pass `&String` slices too by `&String[..]`
 Other slice
 There is array slice too
 ```
