@@ -863,3 +863,122 @@ let slice = &a[1..3]
 
 Ok I hope we got meaning of ownership, memory cleanup, heap, stack and slices.
 
+
+## Struct
+As we have already learnt c we should be familiar with struct. It is just a way to group multiple type of item together. 
+
+In Rust we are already familiar with tuple which is defined using parenthesis `()`.  But the problem with tuple is we don't know what do first, second data means. It would be convienent if we are able to name those data.
+
+Lets create simple struct.
+
+```
+
+struct User {
+	username: String,
+	email: String,
+	sign_in_count: u64,
+	active: bool,
+}
+```
+The key value pair on struct is also called fields. Now using concrete value lets create the instance.
+
+
+```
+let me = User {
+	email: String::from("hey@gmail.com"),
+	username: String::from("hey jude"),
+	active: true,
+	sign_in_count: 1,
+}
+Trailing comma is allowed at end. Order is not important here. And we can use dot notation to get value from struct. `me.email` will give `hey jude`
+
+We can initlize use shortcut like this
+
+let email = String::from("hey@gmail.com")
+let username = String::from("hey jude")
+
+let me = User {
+	email,
+	username,
+	active: true,
+	sign_in_count: 1,
+}
+
+So we used email and username shortcut. 
+
+You can also use one struct to update another struct if they both have things on common like
+
+
+let me = User {
+	email: "hey@judge.com",
+	username: "hello",
+	active: true,
+	sign_in_count:1
+}
+
+let similar = User {
+	email: "heyyyyy@jude.com",
+	username: "hello",
+	..me,
+}
+
+now due to `..me` similar will have active to `true` and `sign_in_count` to `1`. If you are familiar with es6 this may seem too easy ;)
+
+We can create tuple struct too.  Like this
+
+```
+struct Student(String, String)
+struct Teacher(String, String)
+```
+
+If we hadn't use tuple struct and had used tuple only we would be confused if it was student or teacher. Because you cannot know `("hey", "judge")` is student or teacher but you know `Student("hey", "jude")` is definitely a student.
+
+Now its time to debug the struct. As primitive type like integer, boolean implement `Display` trait we can use them directly on `prinln!` macro.
+
+There is different way to debug struct. We may want full syntax, syntax without commans, inline etc. Due to this ambiguity rust don't guess and display error.  We can use `{:?}` instead of `{}` to debug struct. `{:?}` inside `println!` macro means we want to use output format called `Debug`.  But for that you will need to explicitly add annotation to struct like this
+```
+#[derive(Debug)]
+
+struct User {
+	username: String,
+	name: String,
+}
+
+let user = User {
+	username: String::from("hey_jude"),
+	name: String::from("Hey Jude"),
+}
+
+println!("{:?}", rect1)
+```
+
+In console we should see output like this
+```
+{ username: "hey_jude", name: "Hey Jude"}
+```
+
+If you want another variant you can use `{:#?}` instead of `{:?}`.
+
+We can add method to `struct` using `impl` syntax
+
+```
+struct User {
+	username: String,
+	password: String,
+}
+
+impl User {
+	fn get_details(&self) -> String {
+		self.username + " " + self.password
+	} 
+}
+
+```
+
+You can call method using instance.get_details
+
+
+Associated functions are useful on rust. The method that don't take `&self` parameter are associated function. We have use this funciton by using `String::from`.
+
+We can call associated function by double colon `::`. Double colon is also used for module namespacing.
+ 
