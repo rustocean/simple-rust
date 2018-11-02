@@ -921,6 +921,7 @@ let similar = User {
 	username: "hello",
 	..me,
 }
+```
 
 now due to `..me` similar will have active to `true` and `sign_in_count` to `1`. If you are familiar with es6 this may seem too easy ;)
 
@@ -981,4 +982,3 @@ You can call method using instance.get_details
 Associated functions are useful on rust. The method that don't take `&self` parameter are associated function. We have use this funciton by using `String::from`.
 
 We can call associated function by double colon `::`. Double colon is also used for module namespacing.
- 
