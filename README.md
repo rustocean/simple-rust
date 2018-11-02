@@ -982,3 +982,153 @@ You can call method using instance.get_details
 Associated functions are useful on rust. The method that don't take `&self` parameter are associated function. We have use this funciton by using `String::from`.
 
 We can call associated function by double colon `::`. Double colon is also used for module namespacing.
+
+## Enums
+In Rust enums are similar to algebraic data type like on functional langauge Haskell.
+
+Defining a Enum is really easy. There are two type of Ip Address so lets make a enum of IpAddress 
+
+```
+enum IpAddrKind{
+	V4,
+	V6,
+}
+```
+
+Now to create Ipv4 we can create it like this
+
+let four = IpAddrKind::V4 
+
+and its your turn to write for ipv6.
+
+Enum is usefull because in funtion we can use `IpAddrKind`. Using Enum we can also define types on struct like this
+```
+enum IpAddrKind {
+	V4,
+	V6,
+}
+struct IpAddr {
+	kind: IpAddrKind,
+	address: String,
+}
+let home = IpAddr {
+	kind: IpAddrKind::V4,
+	address: String::from("127.0.0.1"),
+}
+```
+
+So here we used enum instead of hard coded 'v4' etc..
+Instead of using struct we can also directly attach data to Enum like this
+```
+enum IpAddr {
+	V4(String),
+	V6(String),
+}
+```
+let four_loopback = IpAddr::V4(String::from("127.0.0.1"));
+let six_loopback = IpAddr::V6(String::from("::1"));
+
+We can also use tuple so that it makes more sense on ipv4
+```
+enum IpAddr {
+	V4(u8,u8,u8,u8),
+	V6(String),
+}
+
+let home = IpAddr::V4(127, 0, 0, 1);
+```
+As ipv4 part cannot be more than 256 we choosed u8.
+
+In Enum we can use any data type like struct, string as we have seen. We can also use another enum. We can also define method on `enum` just like we did with struct.
+
+Now instead of creating new Enum lets use Enum provided by standard library.
+
+We know many programming have Null value which means there is no value. But Null value creats too many problem. Rust remove this problem by not having any null value saving billion dollars.
+
+There is alternative provided by standard library called Option Enum which looks like this:
+
+```
+enum Option<T> {
+	Some(T),
+	None,
+}
+```
+
+Option<T> Enum is really usefull so it is available without using standard library (called in prelude). No only Option but Some and None are also available so we don't need to prefix Option::Some etc.  
+
+lets see example
+
+```
+let name = Some("Julian Lennon");
+let age= Some("55")
+let null: Option<i32> = None;
+```
+
+When we assign None we need to specify type because rust cannot infer the type like it can do with string or integer.
+
+Option is better than null value because compiler is smart enough. It don't let use Option<T> as it was a real value.
+```
+	let x: i8 = 1;
+	let y = Some(5);
+
+	let sum = x + y; // Error
+```
+It is due to fact we cannot add integer with option. Inorder to do that you need to convert Option<T> To T. This makes sure you are working with something that can be Null. Billion dollar saved.
+
+
+To get value from Option<T> we can use match control flow.
+
+Lets see the example
+```
+fn plus_one(x: Option<i32>) -> Option<i32> {
+	match x {
+		None => None,
+		Some(i) => Some(i+1),
+	}
+}
+let five = Some(5);
+let six = plus_one(five);
+let none = plus_one(None);
+```
+
+Matches are exhaustive means we have to handle None case too.
+
+```
+// ....
+
+match x {
+	Some(i) => Some(i +1),
+}
+```
+
+This will throw error because we didn't handle `None` case.
+
+If you want to match all then you can use `-` like this
+
+let num : u8 = 0;
+
+match u8 {
+	1 => println!("one"),
+	3 => println!("three"),
+	5 => println!("five"),
+	_ => (),
+}
+
+It can be abit verbose so we can use if let on such situation like this
+
+consider following
+```
+let x = Some(0);
+match x {
+	Some(3) => println!("three"),
+	_ => (),
+}
+```
+lets use if let here.
+
+```
+if let Some(3) = x { println!("three"); }
+```
+The only down side is we lost exhaustive checking that match enforce.
+
+Ok this is end of enum. I hope enum is really easy for you too.
