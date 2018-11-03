@@ -1382,3 +1382,150 @@ Or we can use super to be more clear
 ```
 super::client::connect();
 ```
+
+## Collections
+We have already learnt about array, tuples, string. We will learn to use vector and hash map in this part.
+
+Vectors allow to store same type od data but with flexibily like we can increase or decrease. Array is fixed size vector is not. And vector can store value of same type only
+To create a new empty vector we can write it like this
+
+let v : Vec<i32> = Vec::new();
+
+Here we have specified Vec as type and used i32 as generics becuase we want to make vector of integer or i32. So Vectors are implemented using generics.
+
+Or if we want implicit type and generics we can write it like this
+
+```
+let v  = vec![1,2,3];
+```
+
+So instead of using Vec and generics we used vec macro here to easily create a vector.
+
+To add element on vector like on stack use push method.
+```
+let mut v = Vec::new();
+
+v. push(4);
+v.push(5);
+```
+
+When we pushed 4 rust can infer the type and set it as i32.
+Like any other struct vector will be freed when it goes out of scope.
+
+To read elemnts of vector we can do it like this
+
+```
+let v = vec![1,2,3,4,5];
+let second: &i32 = &v[1];
+let third: Option<&i32> = v.get(2);
+```
+
+here when we use reference and the index value doen't exist rust will panic. But v.get() will return an `Option`'s Enum `None` object if it doen't exist.
+
+
+We have already said we can use vector to store only one type of data. But it seem incovinient isn't it. However using Enum we can fix that
+
+```
+enum Fileds {
+	Int(i32),
+	Text(String)
+}
+let row = !vec[
+	Fields::Int(3),
+	Fields::Text('hey jude'),
+]
+```
+
+Because we are using same enum it is still homegeneous for vector.
+
+Now lets talk about string. In Rust string are implemented as collection of bytes. 
+
+Creating a new string should be easy
+```
+let mut s = String::new();
+```
+If we already have string slices or string literal we can use `to_string()` method like this:
+
+```
+let name = "hey jude";
+let s = name.to_string();
+
+// Or we can use directly
+let s = "hey jude".to_string();
+```
+
+String can grow in size and change its content. Think of string like vector. String even have concatenation operator `+`. 
+
+To append string we use push_str method
+
+```
+let mut s = String::from('Hey');
+let j = String::from(" judge");
+s.push_str(&j);
+```
+
+Now lets use plus
+```
+let s1 = String::from("hey");
+let s2 = String::from("Jude");
+let s3 = s1 + &s2; // s1 is no nolonger valid because owner is gone to s3.
+```
+
+we can use format! macro to work like in sameway as println!
+```
+let s1 = String::from("hey");
+let s2 = String::from(" jude");
+let s = format!("{}-{}", hey, jude); // Don't worry ownership is not taken away from s1 and s2. 
+```
+
+Rust don't support string indexing so you cannoot use it like this
+```
+let s1 = String::from("hey");
+let h = s1[0] // error
+```
+
+It is because utf-8 encoded bytes are stored. And depending on character etc bytes can be different. And in Rust indexing operation is always o(1). So rust don't allow due to internal representation of string.
+
+
+To iterate over striing you can use chars() method like this
+```
+for c in "asd".chars() {
+	println!("{}", c)
+}
+```
+
+For bytes you can use `bytes` method similar to chars. Getting grapheme cluster which is found in word like hindi, nepali words rust cannot do it. We need to import external crates.
+
+#### Hash Map
+HashMap<K,V> Stores mapping of keys of type K to values of type V. Some lanuage name it as object, map, hash table or associative arrays. Basically when we want to look data by name not by index hash map is useful.
+
+To create a new hash map first import `HashMap` from standard library `collections` like this
+
+```
+use std::collections::HashMap;
+
+let mut scores = HashMap::new()
+
+scores.insert(String::from("Blue"),10);
+```
+
+To access item on hash map we can use it like this
+
+```
+use std::collections::HashMap;
+
+let mut scores = HashMap::new()
+
+scores.insert(String::from("Blue"),10);
+
+let b = String::from("Blue");
+let blue_value = scores.get(&b); // we should get 10 here.
+```
+
+If you insert using same key the value will be replaced. If you want to insert the value if it don't exist then you can use `or_insert` method because Hash Mpa use `Entry` enum which has `or_insert`
+
+let mut scores = HashMap::new();
+scores.entry(String::from("Yellow")).or_insert(50);
+scores.entry(String::from("Blue")).or_insert(60); // Blue key has value 50 
+
+Hashing function  is used by HashMap to provide rsistance to DOS attacks which may not be fast. But you can easily swap out with any hasher which which implements `BuildHasher` traits.
