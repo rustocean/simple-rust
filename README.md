@@ -1669,3 +1669,330 @@ fn read_username_from_file() -> Result<String, io::Error>
 }
 ```
 
+## Generic Types, Traits and Lifetimes
+Generics are usually used to remove duplications of concepts. Imagine you have to create two function just because its arguments are of different types. It would be hell right?
+
+Ok lets move incrementally. 
+
+Lets program a program which find largest number in list.
+
+Lets just do it in `main.rs` function
+```
+fn main() {
+	let numbers = vec![1,2,3,4,5];
+	let mut largest = numbers[0];
+
+	for number in numbers {
+		if(numebr > largest) {
+			largest = number;
+		}
+	}
+
+	println("The largest number is {}", largest);
+}
+```
+Ok if we have to find largest number of another group of number we would need to duplicate same code twice so lets refactor to function
+```
+fn largest(list: &[i32]) -> i32 {
+	let mut largest= list[0];
+
+	for &item in list.iter() {
+		if item > largest {
+			largest = item;
+		}
+	}
+
+	largest
+}
+
+fn main() {
+	let number = vec![1,2,3,4,5];
+	let result = largest(&number);
+	println!('largest num {}', result);
+
+	// now basically same thing 
+	let numbers = vec![6,7,8,9,10];
+	let result = largest(&number);
+	println!('largest num {}', result);
+}
+```
+
+It was a good refactor but lets say we need to find largest character instead of number. As we specified type there it will be problematic right?
+
+So here comes the Generic Data Type.
+
+```
+fn largest<T>(list: &[T]) -> T {
+	let mut largest= list[0];
+
+	for &item in list.iter() {
+		if item > largest {
+			largest = item;
+		}
+	}
+
+	largest
+}
+
+fn main() {
+	let number = vec![1,2,3,4,5];
+	let result = largest(&number);
+	println!('largest num {}', result);
+
+	// now basically same thing 
+	let numbers = vec!['c', 'd', 'e', 'a'];
+	let result = largest(&number);
+	println!('largest num {}', result);
+}
+```
+
+Ok it was good refactor but it will still not compile because it says implementation of `std::cmp::PartialOrd` might be missing. It is talking about missing trait. We will comeback to it later.
+
+We can use Generaic Data type in struct too.
+
+struct Point<T> {
+	x: T,
+	y: T,
+}
+
+let ints = Point {x: 5, y: 10};
+let floats = Point {x: 1.0, y:5.0 };
+
+Ok lets use Generic Data Type in Enum definitions
+we have already seen some enum using Generic Type
+
+```
+enum Option<T> {
+	Some(T),
+	None,
+}
+```
+
+If you remember another was `Result` Enum
+```
+enum Result<T, E> {
+	Ok(T),
+	Err(E),
+}
+```
+
+We can also use Generic Data type in method definitions
+```
+struct Point<T> {
+	x: T,
+	y: T,
+}
+
+impl<T> Point<T> {
+	fn x(&self) -> &T {
+		&self.x
+	}
+}
+```
+
+The best part of code using generics is that it is not slow. It is because rust used monomorphization of code using generic at compile time.
+
+Traits is a way to abstract behaviour that types can have in common. It tells rust compiler about funcitonality a particular type has and might share with other types.
+
+It is like interfaces in otherlanguage with some differences.
+
+Lets say news article and tweet have similarity. That is they both have summary. so lets make Summarizable trait.
+
+We define trait like this:
+
+```
+pub trait Summarizable {
+	fn summary(&self) -> String;
+}
+```
+Now lets use this trait.
+```
+pub struct NewsArticle {
+	pub news: String,
+}
+impl Summarizable for NewsArticle {
+	fn summary(&self) -> String {
+		format!("summar: {}", self.news);
+	}
+}
+```
+
+Now lets use this powerful trait with tweets.
+
+```
+pub struct Twitter {
+	pub tweet: String,
+}
+impl Summarizable for Tweet {
+	fn summary(&self) -> String {
+		format!("{}", self.tweet);
+	}
+}
+```
+
+Now you can easily make instances and use our trait summary method.
+
+We can also use default implementation of trait like this
+
+```
+pub trait Summarizable {
+	fn summary(&self) -> String {
+		String::from("(Read more...)")
+	}
+}
+```
+Now you can implement it like this
+```
+impl Summarizable for NewsArticle {}
+```
+
+And make instance for news article and calling summary should display `Read me`
+and we can also override if you don't want default implementation for specific code.
+
+Now we have trait we can use trait bound to restrict function that allow only items that has used triat like this.
+
+pub fn notify<T: Summarizable>(item: T) {
+	println!("Breaking News {}", item.summary());
+}
+
+Traitbound go with declaration of generic type paramter. Because there is trait bound we are always sure item we receive as argument that will have summary method. If we pass string etc we will get error. We may want to allow that implement any type like Summarizable and Display trait. You can use plus `+` sign like this
+
+```
+pub fn somefunction<T:Display + Summarizable>(t: T) ->i32{
+	// ...
+}
+```
+
+Or you can rewrite same thing as 
+
+```
+pub fn somefunction<T,U>(t:T)
+	where T: Display + Summarizable {
+		// ...	
+}
+```
+
+Now lets fix the previous largest function which we wrote way back. 
+We used generics there but generics we got error showing generics didn't implemented `std::cmp::PartialOrd`. `PartialOrd` is so used that we don't even need to import its available in prelude
+
+```
+fn largest<T: PartialOrd>(list: &[T]) -> T {
+	// ...
+}
+```
+
+We will get compile error if we do this. This error is due to fact String[0] etc don't work. However we use only i32 and char which uses Copy trait. We can use allow that implement Copy trait so that rust can use `list[0]`
+
+```
+use std::cmp::PartialOrd;
+
+fn largest<T: PartialOrd + Copy>(list: &[T]) -> T{
+	let mut largest = list[0];
+
+	for &item in list.iter() {
+		if item > largest {
+			largest = item;
+		}
+		largest
+	}
+}
+
+fn main() {
+	let nums = vec![1,2,3,4,5]
+	let result = largest(&numbers);
+	println!("sorted: {}", result);
+
+	let chars = vec!['b','c','a','d'];
+	let result = largest(&numbers);
+	println!("The largest char is {}", result);
+}
+```
+
+Due to trait bound the error we get at run time will be transfered to compile time making it too easy to reduct error.
+
+Now lets learn about generics called Lifetimes. It is generics which helps us to ensure that references are valid as long as we need them to be.
+
+We have used references etc while passing to function right. Every references has a lifetime which is scope for which that references is valid. Most lifetimes are implicit and imferred just like most of types are infered. Just like particular case we explicitly type there are cases where lifetimes of references could be related in few different way so Rust needs us to annotate the relationships using generic lifetime parameter so it can make sure the actual references used at runetime will definitely be valid.
+
+Lifetime prevents dangling references
+```
+{
+	let r;
+	{
+		let y = 3;
+		r = &y;
+	}
+	println!("r: {}", r);
+}
+```
+
+Ok this is error if you see that. When we use r is reference of y r is pointing to address where y is assigned. But when scope is over y is gone out. Meaning x is pointing to invalid memory. Thankfully rust gives error. This is due to lifetimes.
+
+Rust use Borrow Checker which is part of compiler. The variable y block is smaller to lifetimes block of r. Rust compares the size of two block. The program is rejected if any variable from larger life time blocks has references to samll lifetimes block.
+
+
+lets create a program to find largest string.
+
+```
+fn main()
+{
+	let string1 = String::from('aaaaaa');
+	let string2 = "asdfasdfasdf";
+
+	let result = longest(string1.as_str(), string2);
+	println!("The longest string is {}", result);
+}
+
+fn longest(x: &str, y: &str) -> &str {
+	if x.len() > y.len() {
+		x
+	} else {
+		y
+	}
+}
+```
+
+This code will not compile because rust have no way to know if longest will return x or y so it cannot infer the lifetime. Although we know its safe rust compiler simply doesn't know. So we need explicit lifetimes
+
+In rust we can use Lifetime annotation syntax apostrophe `'a`. We can use otherletters etc but using `'a` is convention.
+
+in nutshell
+
+```
+&i32. // a reference
+&'a i32 // a reference with an explicit lifetime
+&'a mut i32 // a mutable reference with an explicit lifetime
+```
+
+Ok lets use lifetime annotation on `longest` function
+
+```
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+	if x.len() > y.len() {
+		x
+	}else {
+		y
+	}
+}
+```
+
+We need to use lifetime annotation on struct if struct has been used to hold references like this
+
+```
+struct Excerpt<'a>{
+	part: &'a str,
+}
+fn main() {
+	let novel = String::from("Who is the favorite person. Hey jude...")
+	let first_sentence = novel.split('.').next().expect('there is no dot ...');
+	le i = Excerpt{part: first_sentence}
+}
+```
+
+There is one special life time called static. `'static` lifetime is entire lifetime duration of program. All string literals have `'static` lifetime.
+
+```
+let s: &'static str = "I have a static lifetime"
+```
+
+It is because string literals are stored on binary file so our program can always get that value.
