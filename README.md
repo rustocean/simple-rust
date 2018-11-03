@@ -1132,3 +1132,253 @@ if let Some(3) = x { println!("three"); }
 The only down side is we lost exhaustive checking that match enforce.
 
 Ok this is end of enum. I hope enum is really easy for you too.
+
+## Modular Rust
+Many language have namespacing feature and in rust there is something called modules which helps to organize our code.
+
+Module can be private or public and can be defined using `mod` keyword.
+We can use modules by using `use` statement. Remember we used `rand` module to create a simple game.
+
+To understand module we will create a sample crate called communicator.
+```
+$ cargo new communicator
+```
+
+As we didn't passed bin flag cargo will scaffold us a new library modules so we should see `src/lib.rs` instead of `main.rs`. We can be explicit while generating library by passing `lib` flag.
+
+For our communicator library we will define a module name network that contain function called connect.
+```
+mod network {
+	fn connect() {
+
+	}
+}
+```
+
+So now everything inside network will be namespaced. To use connect we will use `network::connect()`. If we haven't used module we could use `connect()` directly.
+
+We can also have multiple modules like client module etc.
+
+```
+
+mod network {
+	fn connect() {
+
+	}
+}
+
+mod client {
+	fn connect() {
+
+	}
+}
+```
+
+As there is namespacing there is no chance of collision . So `network::connect()` and `client::connect()` are different. 
+
+
+As `src/lib.rs` can get too long due to many modules code we can split to file. Say we have starting code like this:
+
+```
+mod client {
+	fn connect(){
+
+	}
+}
+
+mod network {
+	fn connect() {
+
+	}
+
+	mod server {
+		fn connect() {
+
+		}
+	}
+}
+```
+
+Basically our hierarchy looks like this
+
+```
+communicator
+	client
+	network
+		connect
+		server
+```
+Now first lets refactor client to separate file . Create `client.rs` file and add the following code there.
+```
+fn connect() 
+{
+
+}
+```
+
+and change `lib.rs` file to this
+```
+mod client;
+mod network {
+	fn connect() {
+
+	}
+	mod server {
+		fn connect(){
+
+		}
+	}
+}
+```
+
+As rust look only `lib.rs` by default `mod client;` will make sure `client.rs` file get proper namespace.
+
+Now lets refactor network too. We can do change lib.rs to this
+
+```
+mod client;
+mod network;
+```
+
+and create `network.rs` file like this
+
+```
+fn connect() {
+
+}
+
+mod server {
+	fn connect {
+
+	}
+}
+```
+
+so now we got two modules working same but we separated concerns it will be easier to manage codebase when it gets too large.
+
+Now lets even change network.rs to have separate file. Its like refactoring network.rs file .
+
+change `network.rs` to this
+
+```
+fn connect() {
+
+}
+mod server;
+```
+
+You may think if we create `server.rs` it will be ok but rust will throw error. Because `network.rs` mods and `lib.rs` mods lives on different way. Modules defined on lib.rs can live as its sibling. Placing server.rs means we can reference `mods server` on `lib.rs` file creating confusion.
+
+To solve this create a new directory name network and create a file mod.rs and server.rs.
+and move code of `network.rs` to `network/mod.rs`.
+
+So till now you should know it how rust evaluates modules.
+```
+communicator
+	client
+	network
+		server
+```
+
+for network it searches for network.rs if it don't have any submodules inside it otherwise searches for `network/mod.rs`.
+
+Now i hope we have understood about hierarchy. Lets use module.
+
+Create `main.rs` file with main function.
+
+```
+extern crate communicator;
+
+fn main() {
+	communicator::client::connect();
+}
+```
+
+When we added `main.rs` file there are two crates one is binary crate and another crate called `src/lib.rs` file named 'communicator'
+
+
+When we compile we get error and it is because client is private by default. Change client to public like this.
+
+change  src/lib.rs to:
+
+```
+pub mod client;
+
+mod network;
+```
+
+Now try to compile it should still throw error because `connect` is private. Go to `client.rs` file and change connect to look like this
+
+```
+pub fn connect() {
+
+}
+```
+
+now it should compile and unused warning should go away too. SO there are two basic rules
+
+- If an item is public it can be accessed through any of its parents modules
+- If an item is private it can be accessed only by current module and its child module.
+
+For long namespaced modules like this
+```
+pub mod a {
+	pub mod series {
+		pub of of {
+			pub fn nested_modules() {
+
+			}
+		}
+	}
+}
+```
+
+To use nested modules we have to use it like this
+a::series::of::nested_modules()
+
+It is not too long but large projects or crates can have too long so we want to use it like this:
+```
+use a::series::of
+
+fn main() {
+	of::nested_modules();
+}
+```
+
+In `lib.rs` file there is tests modules. If you have deleted them please scaffold again or type the following code.
+
+```
+#[cfg(test)]
+mod tests {
+	#[test]
+	fn it_works() {
+		client::connect();
+	}
+}
+```
+
+We can run tests by this command
+```
+$ cargo test
+```
+
+The test will fail because we have to use communicator library here. Its because test module has its own scope and we have to use communicator:: infornt of `client::connect()` 
+
+like this
+
+```
+communicator::client::connect()
+```
+
+
+however referencing communicator is not abstract so we can use :: only to backup one modules in the module hierarchy
+
+```
+::client::connect();
+```
+
+Or we can use super to be more clear
+
+```
+super::client::connect();
+```
