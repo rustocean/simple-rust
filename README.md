@@ -1529,3 +1529,143 @@ scores.entry(String::from("Yellow")).or_insert(50);
 scores.entry(String::from("Blue")).or_insert(60); // Blue key has value 50 
 
 Hashing function  is used by HashMap to provide rsistance to DOS attacks which may not be fast. But you can easily swap out with any hasher which which implements `BuildHasher` traits.
+
+## Error Handling
+In rust there are two types of error recoverable and unrecoverable. Rust don't have exception but it has the value called Result<T,E> for recoverable rror and panic! macro for unrecoverable error
+
+When we use panic! rust will throw error but also it will use go back to stack for cleaning. THis may not be efficient and we may want os to clean memory for that you can edit `Cargo.toml` file like this
+```
+[profile.release]
+panic = 'abort'
+```
+
+
+Usually panic! is used internally on many places like when you try to access array which index don't exist.
+
+If you want to check backtrace you can use environment variable RUST_BACKTRACE=1 to reas full stack tree.
+
+Panicking may not always help in case when error are not serious in that case we use `Result`. Like opening a file which don't exist we should use result than panicking file was not accessible and `crashing` whole program.
+
+Result enum look like this
+```
+enum Result<T, E> {
+	Ok(T),
+	Err(E),
+}
+```
+
+
+lets use Result which is returned by standard library called filesystem.
+
+```
+use std::fs::File;
+
+fn main(){
+	let f = File::open("hello.txt");
+	let f = match f {
+		Ok(file) => file,
+		Err(error) => {
+			panic!("There was problem accesing file {:?}", error)
+		}
+	}
+}
+```
+
+Error can be different like sometime the file don't exist and we may want to create that file for user. Or sometime there is permission problem where we can panic.
+
+Lets handle that case
+
+```
+use std::fs::File;
+use std::io::ErrorKind;
+
+fn main() {
+	let f = File::open("hello.txt");
+
+	let f = match f {
+		Ok(file) => file,
+		Err(ref error)
+			if error.kind() === ErrorKind::NotFound => {
+				match File::create("hello.text") {
+					Ok(fc) => fc,
+					Err(e) => {
+						panic!("Cannot create file {:?}", e);
+					}
+				}
+			}
+			Err(error) => {
+				panic!("There was problem opening the file: {:?}", error);
+			}
+	}
+}
+```
+
+There is shortcut for panic on error using unwrap.
+
+```
+let f = File::open("hello.txt").unwrap();
+```
+
+If we use this `unwrap` will unwrap the value inside Ok. If there is error it will throw panic making super easy over match.
+
+If you want to change error message you can you use expect()
+
+```
+let f = File::open("hello.txt").expect("Failed to open file");
+```
+
+#### Propagating error
+Sometime we want to propagate error so that error debugging is easy. Like say we defined a method that do file handling and want to propagate error.
+
+```
+use std::io;
+use std::io::Read;
+use std::fs::File
+
+fn read_username_from_file() -> Result<String, io::Error> {
+	let f = File::open("hello.txt");
+
+	let mut f = match f {
+		Ok(file) => file,
+		Err(e) => return Err(e),
+	}
+
+	let mut s = String::new();
+
+	match f.read_to_string(&mut s) {
+		Ok(_) => Ok(s),
+		Err(e) =>  Err(e),
+	}
+}
+```
+
+There is another shortcut for propagating error. It is by using `?`.
+
+```
+use std::io;
+use std::io::Read;
+use std::fs::File;
+
+fn read_username_from_file() -> Result<String, io::Error> {
+	let mut f = File::open('hello.txt')?;
+	let mut s = String::new();
+	f.read_to_string(&mut s)?;
+	Ok(s)
+}
+```
+
+We can chain `?` in rust.
+
+```
+use std::io;
+use std::io::Read;
+use std::fs::File;
+
+fn read_username_from_file() -> Result<String, io::Error>
+{
+	let mut s = String::new();
+	File::open("hello.txt")?.read_to_string(&mut s)?;
+	Ok(s)
+}
+```
+
